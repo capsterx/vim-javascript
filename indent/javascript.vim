@@ -58,6 +58,8 @@ let s:one_line_scope_regex = '\<\%(if\|else\|for\|while\)\>[^{;]*' . s:line_term
 " Regex that defines blocks.
 let s:block_regex = '\%({\)\s*\%(|\%([*@]\=\h\w*,\=\s*\)\%(,\s*[*@]\=\h\w*\)*|\)\=' . s:line_term
 
+let s:function_end = 'function\s*([^)]*)\s*$'
+
 " 2. Auxiliary Functions {{{1
 " ======================
 
@@ -274,9 +276,27 @@ function GetJavascriptIndenti()
   endif
 
   " Set up variables for current line.
+  let orig_line = line
   let line = getline(lnum)
   let ind = indent(lnum)
 
+  "If we get an opening on a blank line, we want to reindent correctly
+  let col = matchend(orig_line, '^\s*{')
+  if col > 0 && !s:IsInStringOrComment(v:lnum, col)
+    echom "We found a block begin"
+    if s:Match(lnum, s:function_end)
+      echom "Previous line is a function...yay"
+      return indent(s:GetMSL(lnum, 0))
+    endif
+    let ols = s:InOneLineScope(lnum)
+    if ols > 0
+      let counts = s:LineHasOpeningBrackets(lnum)
+      if counts[0] == '0'
+	return indent(s:GetMSL(lnum, 0))
+      end
+    end
+  endif
+  
   " If the previous line ended with a block opening, add a level of indent.
   if s:Match(lnum, s:block_regex)
     echom "Previous line ended with a block ending"
@@ -311,13 +331,15 @@ function GetJavascriptIndenti()
 
   let ind_con = ind
   let ind = s:IndentWithContinuation(lnum, ind_con, &sw)
+  echom "Almost at end"
 
   " }}}2
   "
   "
   let ols = s:InOneLineScope(lnum)
   if ols > 0
-    let ind = ind + &sw
+    echom "ols > 0"
+    "let ind = ind + &sw
   else
     let ols = s:ExitingOneLineScope(lnum)
     while ols > 0 && ind > 0
