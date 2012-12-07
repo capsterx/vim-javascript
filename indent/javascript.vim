@@ -242,10 +242,12 @@ function GetJavascriptIndenti()
     return ind
   endif
 
+
   " If we are in a multi-line comment, cindent does the right thing.
   if s:IsInMultilineComment(v:lnum, 1)
     return cindent(v:lnum)
   endif
+  echom "Done with multiline comment"
 
   " 3.3. Work on the previous line. {{{2
   " -------------------------------
@@ -277,24 +279,31 @@ function GetJavascriptIndenti()
 
   " If the previous line ended with a block opening, add a level of indent.
   if s:Match(lnum, s:block_regex)
+    echom "Previous line ended with a block ending"
     return indent(s:GetMSL(lnum, 0)) + &sw
   endif
 
   " If the previous line contained an opening bracket, and we are still in it,
   " add indent depending on the bracket type.
   if line =~ '[[({]'
+    echom "We are in this stuff"
     let counts = s:LineHasOpeningBrackets(lnum)
     if counts[0] == '1' && searchpair('(', '', ')', 'bW', s:skip_expr) > 0
       if col('.') + 1 == col('$')
+	echom "Col whatever stuff"
         return ind + &sw
       else
+	echom "virtcol whatever stuff"
         return virtcol('.')
       endif
     elseif counts[1] == '1' || counts[2] == '1'
+      echom "indent whatever stuff"
       return ind + &sw
     else
+      echom "Cursor call"
       call cursor(v:lnum, vcol)
     end
+    echom "We got to the end of this stuff"
   endif
 
   " 3.4. Work on the MSL line. {{{2
