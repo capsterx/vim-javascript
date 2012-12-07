@@ -211,8 +211,7 @@ endfunction
 
 " 3. GetJavascriptIndent Function {{{1
 " =========================
-
-function GetJavascriptIndent()
+function GetJavascriptIndenti()
   " 3.1. Setup {{{2
   " ----------
 
@@ -318,6 +317,12 @@ function GetJavascriptIndent()
     endwhile
   endif
 
+  return ind
+endfunction
+
+function GetJavascriptIndent()
+  let ind = GetJavascriptIndenti()
+  echom "Returning " . ind
   return ind
 endfunction
 
