@@ -15,6 +15,10 @@ if exists("b:did_indent")
 endif
 let b:did_indent = 1
 
+if !exists("g:vim_javascript")
+  let g:vim_javascript = 0
+endif
+
 setlocal nosmartindent
 
 " Now, set up our indentation expression and keys that trigger it.
@@ -76,6 +80,12 @@ endfunction
 " Check if the character at lnum:col is inside a multi-line comment.
 function s:IsInMultilineComment(lnum, col)
   return synIDattr(synID(a:lnum, a:col, 1), 'name') =~ s:syng_multiline
+endfunction
+
+function s:Log(msg)
+  if g:vim_javascript
+    echom "LOG: " . a:msg
+  endif
 endfunction
 
 " Find line above 'lnum' that isn't empty, in a comment, or in a string.
@@ -249,7 +259,7 @@ function GetJavascriptIndenti()
   if s:IsInMultilineComment(v:lnum, 1)
     return cindent(v:lnum)
   endif
-  echom "Done with multiline comment"
+  call s:Log( "Done with multiline comment")
 
   " 3.3. Work on the previous line. {{{2
   " -------------------------------
@@ -283,9 +293,9 @@ function GetJavascriptIndenti()
   "If we get an opening on a blank line, we want to reindent correctly
   let col = matchend(orig_line, '^\s*{')
   if col > 0 && !s:IsInStringOrComment(v:lnum, col)
-    echom "We found a block begin"
+    call s:Log( "We found a block begin")
     if s:Match(lnum, s:function_end)
-      echom "Previous line is a function...yay"
+      call s:Log( "Previous line is a function...yay")
       return indent(s:GetMSL(lnum, 0))
     endif
     let ols = s:InOneLineScope(lnum)
@@ -299,31 +309,31 @@ function GetJavascriptIndenti()
   
   " If the previous line ended with a block opening, add a level of indent.
   if s:Match(lnum, s:block_regex)
-    echom "Previous line ended with a block ending"
+    call s:Log( "Previous line ended with a block ending")
     return indent(s:GetMSL(lnum, 0)) + &sw
   endif
 
   " If the previous line contained an opening bracket, and we are still in it,
   " add indent depending on the bracket type.
   if line =~ '[[({]'
-    echom "We are in this stuff"
+    call s:Log( "We are in this stuff")
     let counts = s:LineHasOpeningBrackets(lnum)
     if counts[0] == '1' && searchpair('(', '', ')', 'bW', s:skip_expr) > 0
       if col('.') + 1 == col('$')
-	echom "Col whatever stuff"
+	call s:Log( "Col whatever stuff")
         return ind + &sw
       else
-	echom "virtcol whatever stuff"
+	call s:Log( "virtcol whatever stuff")
         return virtcol('.')
       endif
     elseif counts[1] == '1' || counts[2] == '1'
-      echom "indent whatever stuff"
+      call s:Log( "indent whatever stuff")
       return ind + &sw
     else
-      echom "Cursor call"
+      call s:Log( "Cursor call")
       call cursor(v:lnum, vcol)
     end
-    echom "We got to the end of this stuff"
+    call s:Log( "We got to the end of this stuff")
   endif
 
   " 3.4. Work on the MSL line. {{{2
@@ -331,14 +341,14 @@ function GetJavascriptIndenti()
 
   let ind_con = ind
   let ind = s:IndentWithContinuation(lnum, ind_con, &sw)
-  echom "Almost at end"
+  call s:Log( "Almost at end")
 
   " }}}2
   "
   "
   let ols = s:InOneLineScope(lnum)
   if ols > 0
-    echom "ols > 0"
+    call s:Log( "ols > 0")
     "let ind = ind + &sw
   else
     let ols = s:ExitingOneLineScope(lnum)
@@ -353,7 +363,7 @@ endfunction
 
 function GetJavascriptIndent()
   let ind = GetJavascriptIndenti()
-  echom "Returning " . ind
+  call s:Log( "Returning " . ind)
   return ind
 endfunction
 
